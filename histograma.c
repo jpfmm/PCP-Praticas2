@@ -76,11 +76,13 @@ int main(int argc, char* argv[]) {
    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
    MPI_Comm_size(MPI_COMM_WORLD, &tamanho);
 
+   int divData = data_count/tamanho;
+   
    if(myrank == 0){
 		data = malloc(data_count*sizeof(float));
 		Gen_data(min_meas, max_meas, data, data_count);
 		for(i = 1; i < tamanho; i++){
-			MPI_Send(data + (i-1) * (data_count/tamanho), data_count/tamanho, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+			MPI_Send(data + (i-1) * divData, divData, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
 		}
 		bin_maxes = malloc(bin_count*sizeof(float));
 		bin_counts = malloc(bin_count*sizeof(int));
@@ -89,6 +91,7 @@ int main(int argc, char* argv[]) {
 			MPI_Recv(results, bin_count, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, NPI_STATUS_IGNORE);
 			for( j = 0; j < bin_count; j++){
 				bin_counts[j] += results[j];
+				total += results[j];
 			}
 			i--;
 		}
@@ -100,13 +103,13 @@ int main(int argc, char* argv[]) {
 		free(bin_maxes);
 		free(bin_counts);
    }else{
-		data = malloc((data_count/tamanho)*sizeof(float));
+		data = malloc(divData*sizeof(float));
 		bin_maxes = malloc(bin_count*sizeof(float));
 		bin_counts = malloc(bin_count*sizeof(int));
 		
 		MPI_Recv(data, data_count/tamanho, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		Gen_bins(min_meas, max_meas, bin_maxes, bin_counts, bin_count);
-		for(i = 0; i < (data_count/tamanho); i++){
+		for(i = 0; i < divData; i++){
 			bin = Which_bin(data[i], bin_maxes, bin_count, min_meas);
 			bin_counts[bin]++;
 		}
