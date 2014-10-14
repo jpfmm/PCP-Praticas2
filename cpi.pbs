@@ -1,0 +1,9 @@
+##!/bin/bash
+#PBS -l walltime=03:00
+#PBS -j oe
+#PBS -N a
+#PBS -l nodes=4:ppn=2
+
+cat $PBS_NODEFILE
+cd ~/histograma
+mpirun -np 8 -machinefile $PBS_NODEFILE -mca btl tcp,sm,self ./histograma_mpi 50 0 100 10000
