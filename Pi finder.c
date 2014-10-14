@@ -32,6 +32,14 @@ int main(int argc, char**){
    
 	MPI_Bcast(&niter, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	
+	count_local = 0;
+	for ( i=0; i<(niter%size_W); i++) {
+      x = (double)rand()/RAND_MAX;
+      y = (double)rand()/RAND_MAX;
+      z = x*x+y*y;
+      if (z<=1) count_local++;
+    }
+	
 	MPI_Reduce(&count_local, &count, 1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
 	
 	pi=count/niter*4;
@@ -40,7 +48,7 @@ int main(int argc, char**){
 	MPI_Bcast(&niter, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	
 	count_local = 0;
-	for ( i=0; i<niter; i++) {
+	for ( i=0; i<(niter/size_W); i++) {
       x = (double)rand()/RAND_MAX;
       y = (double)rand()/RAND_MAX;
       z = x*x+y*y;
