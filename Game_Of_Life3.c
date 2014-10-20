@@ -74,10 +74,11 @@ int main(int argc, char *argv[]) {
 		buf[i] = malloc(NJ*sizeof(int));
 	}
 
-	printf("PID: %d, vamos para o ciclo\n");
 	
 	/* time steps */
 	for(n=0; n<NSTEPS; n++){
+		printf("Sou o PID: %d, vamos para o ciclo %d\n", pid, n);
+	
 		// Apenas o Master vai fazer isto
 		if(pid == 0){
 			/* corner boundary conditions */
@@ -102,8 +103,10 @@ int main(int argc, char *argv[]) {
 		{i_fim+= NI % n_proc;
 		}
 		
+		
 		// Broadcast da grelha
 		MPI_Bcast(&old, ni*nj, MPI_INT, 0, MPI_COMM_WORLD);
+		
 		
 		//Iterar Ciclos
 		for(i=i_inicio; i<=i_fim; i++){
