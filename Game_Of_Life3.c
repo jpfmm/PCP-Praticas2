@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		}
+		printf("Grelha criada\n");
 	}
 	
 	
@@ -73,6 +74,8 @@ int main(int argc, char *argv[]) {
 		buf[i] = malloc(NJ*sizeof(int));
 	}
 
+	printf("PID: %d, vamos para o ciclo\n");
+	
 	/* time steps */
 	for(n=0; n<NSTEPS; n++){
 		// Apenas o Master vai fazer isto
