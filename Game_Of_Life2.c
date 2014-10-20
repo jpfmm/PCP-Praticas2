@@ -178,6 +178,10 @@ int main(int argc, char *argv[]) {
 		printf("\nNumber of live cells = %d\n", alive);
 	}
 	
+	free(old);
+	free(new);
+	free(buf);
+	
 	MPI_Finalize();
 	
 	return 0;
