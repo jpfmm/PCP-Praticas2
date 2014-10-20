@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 					}
 				}
 				else{
-					offsetL = NI % i_offset;
+					offsetL = NI % n_proc;
 					MPI_Recv(&buf, offsetL*NJ, MPI_INT, proc, 2, MPI_COMM_WORLD, &status);
 					for(i = 0; i <= offsetL; i++){
 						for(j = 0; j <= NJ; j++){
