@@ -115,13 +115,13 @@ int main(int argc, char *argv[]) {
 			switch(nsum){
 			case 3:
 				new[i][j] = 1;
-				if(n = NSTEPS - 1){
+				if(n == NSTEPS - 1){
 					alive_local++;
 				}
 			break;
 			case 2:
 				new[i][j] = old[i][j];
-				if(n = NSTEPS - 1){
+				if(n == NSTEPS - 1){
 					alive_local += old[i][j];
 				}
 			break;
