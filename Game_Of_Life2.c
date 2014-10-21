@@ -117,9 +117,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
+	printf("Hi, PID: %d here, so i got %d guys alive\n",pid, alive_local);
+	
 	MPI_Reduce(&alive_local, &alive, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 	
-	printf("Hi, PID: %d here, so i got %d guys alive\n", alive_local);
 	
 	if(pid == 0){
 		printf("\nNumber of live cells = %d, for a %dx%d grid with %d iterations\n", alive, NI, NJ, NSTEPS);
