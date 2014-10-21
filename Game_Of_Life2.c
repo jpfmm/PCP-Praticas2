@@ -13,12 +13,10 @@ serial version
 int main(int argc, char *argv[]) {
 	
 	int i, j, n, im, ip, jm, jp, ni, nj, nsum, alive = 0, alive_local = 0;
-	int **old, **new, **buf;
+	int **old, **new;
 	float x;
 	
-	printf("START\n");
 	MPI_Init(&argc, &argv);
-	printf("INIT\n");
 	
 	/* allocate arrays */
 	ni = NI + 2; /* add 2 for left and right ghost cells */
@@ -30,7 +28,6 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &n_proc);	
 	// id do processo
 	MPI_Comm_rank(MPI_COMM_WORLD, &pid);
-	printf("\n=== pid: %d\n", pid);
 
 	old = malloc(ni*sizeof(int*));
 	new = malloc(ni*sizeof(int*));
@@ -55,21 +52,17 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	}
-	printf("PID: %d, Grelha criada\n",pid);
-
+	
 	//Quantas simulacoes cada processo faz
 	int carga = NSTEPS / n_proc;
-	
-	/* time steps */
-	printf("Sou o PID: %d, vou para o calculo\n", pid);
 	
 	// Se for o ultimo faz o resto das iteracoes
 		if (pid+1 == n_proc)
 		{carga+= NSTEPS % n_proc;
 		}
 	
+	// Efectua os calculos respetivos
 	for(n=0; n<carga; n++){
-	
 		
 		/* corner boundary conditions */
 		old[0][0] = old[NI][NJ];
@@ -126,8 +119,10 @@ int main(int argc, char *argv[]) {
 	
 	MPI_Reduce(&alive_local, &alive, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 	
+	printf("Hi, PID: %d here, so i got %d guys alive\n", alive_local);
+	
 	if(pid == 0){
-		printf("\nNumber of live cells = %d\n", alive);
+		printf("\nNumber of live cells = %d, for a %dx%d grid with %d iterations\n", alive, NI, NJ, NSTEPS);
 	}
 	
 	free(old);
