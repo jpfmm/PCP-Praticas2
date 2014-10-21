@@ -162,11 +162,11 @@ int main(int argc, char *argv[]) {
 		
 		//Tenho que receber e gravar
 		
-		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD);
+		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(i = 0; i < nj; i++){
 			old[offset-1][i] = buf[i];
 		}
-		MPI_Recv(&buf, nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD);
+		MPI_Recv(&buf, nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(i = 0; i < nj; i++){
 			old[0][i] = buf[i];
 		}
