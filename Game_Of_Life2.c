@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 		}
 		// Feito o calculo vou gravar os dados
 		// Copio os meus valores
-		for(i=0; i<=NI; i++){
+		for(i=0; i<=i_fim; i++){
 			for(j=0; j<=NJ; j++){
 				old[i][j] = new[i][j];
 			}
