@@ -18,7 +18,7 @@ Run:       ./GameOfLife
 int main(int argc, char *argv[]) {
 	
 	int i, j, n, im, ip, jm, jp, ni, nj, nsum, alive = 0, alive_local = 0;
-	int **ori, **new;
+	int **ori, **new, **old, *buf;
 	float x;
 	
 	MPI_Init(&argc, &argv);
