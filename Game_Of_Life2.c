@@ -81,14 +81,14 @@ int main(int argc, char *argv[]) {
 		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
 		//para o processo anterior e para o posterior, respetivamente
 		if(pid==0){
-		MPI_ISend(&old + offset, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &request);
+		MPI_Isend(&old + offset, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &request);
 		}else{
-		MPI_ISend(&old + offset, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &request);
+		MPI_Isend(&old + offset, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &request);
 		}
 		if(pid==(n_proc-1)){
-		MPI_ISend(&old + offset*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &request2);
+		MPI_Isend(&old + offset*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &request2);
 		}else{
-		MPI_ISend(&old + offset*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
+		MPI_Isend(&old + offset*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
 		}
 		
 		//Tenho que receber e gravar
