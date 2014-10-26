@@ -18,7 +18,7 @@ Run:       ./GameOfLife
 int main(int argc, char *argv[]) {
 	
 	int i, j, n, im, ip, jm, jp, ni, nj, nsum, alive = 0, alive_local = 0;
-	int **ori, **new, **old, *buf;
+	int **new, **old, *buf;
 	float x;
 	
 	MPI_Init(&argc, &argv);
@@ -50,67 +50,56 @@ int main(int argc, char *argv[]) {
 	
 	buf = malloc(nj*sizeof(int));
  	
-	if(pid == 0){
-		ori = malloc(ni*sizeof(int*));
-		
-		for(i=0; i<ni; i++){
-		ori[i] = malloc(nj*sizeof(int));
-		}
 	
-		/* seed */
-		srand(time(0));
+	/* seed */
+	// srand(time(0));
 
-		/* initialize elements of old to 0 or 1 */
-		for(i=1; i<=NI; i++){
-		for(j=1; j<=NJ; j++){
-			x = rand()/((float)RAND_MAX + 1);
-			if(x<0.5){
-				ori[i][j] = 0;
-			} else {
-				ori[i][j] = 1;
-			}
+	/* initialize elements of old to 0 or 1 */
+	for(i=1; i<(offset-1); i++){
+	for(j=1; j<=NJ; j++){
+		x = rand()/((float)RAND_MAX + 1);
+		if(x<0.5){
+			old[i][j] = 0;
+		} else {
+			old[i][j] = 1;
 		}
-		}
-		
-		//Calcula os cantos
-		/* corner boundary conditions */
-		ori[0][0] = ori[NI][NJ];
-		ori[0][NJ+1] = ori[NI][1];
-		ori[NI+1][NJ+1] = ori[1][1];
-		ori[NI+1][0] = ori[1][NJ];
-		/* left-right boundary conditions */
-		for(i=1; i<=NI; i++){
-		ori[i][0] = ori[i][NJ];
-		ori[i][NJ+1] = ori[i][1];
-		}
-		/* top-bottom boundary conditions */
-		for(j=1; j<=NJ; j++){
-		ori[0][j] = ori[NI][j];
-		ori[NI+1][j] = ori[1][j];
-		}
-		
-		//passa para a sua grelha de calculo
-		for(i = 0; i < offset; i++){
-			for(j = 0; j < nj; j++){
-				old[i][j] = ori[i][j];
-			}
-		}
-		
-		for(i = 1; i < n_proc - 1; i++){
-			MPI_Send(&ori + (i*offset)*nj, offset, MPI_INT, i, 1, MPI_COMM_WORLD);
-		}
-		
-		MPI_Send(&ori + (i*offset)*nj, (offset + (NI % n_proc))*nj, MPI_INT, i, 1, MPI_COMM_WORLD);
-		
-		free(ori);
 	}
-	else{
-		MPI_Recv(&old, offset*nj, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
-	
+
 	
 	// Efectua os calculos respetivos
 	for(n = 0; n < NSTEPS; n++){
+		
+		//Actualizo os ghosts da direita e da esquerda
+		for(i=1; i<offset-1; i++){
+			old[i][0] = old[i][NJ];
+			old[i][NJ+1] = old[i][1];
+		}
+		
+		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
+		//para o processo anterior e para o posterior, respetivamente
+		if(pid==0){
+		MPI_ISend(&old + offset, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD);
+		}else{
+		MPI_ISend(&old + offset, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD);
+		}
+		if(pid==(n_proc-1)){
+		MPI_ISend(&old + offset*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD);
+		}else{
+		MPI_ISend(&old + offset*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD);
+		}
+		
+		//Tenho que receber e gravar
+		
+		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		for(i = 0; i < nj; i++){
+			old[offset-1][i] = buf[i];
+		}
+		
+		MPI_Recv(&buf, nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		for(i = 0; i < nj; i++){
+			old[0][i] = buf[i];
+		}
 		
 		//Iterar Ciclos
 		for(i=1; i<offset-1; i++){
@@ -120,7 +109,7 @@ int main(int argc, char *argv[]) {
 			jm = j-1;
 			jp = j+1;
 			nsum = old[im][jp] + old[i][jp] + old[ip][jp]
-			+ old[im][j ] + old[ip][j ]
+			+ old[im][j ] 				+ old[ip][j ]
 			+ old[im][jm] + old[i][jm] + old[ip][jm];
 			switch(nsum){
 			case 3:
@@ -146,32 +135,7 @@ int main(int argc, char *argv[]) {
 			for(j=0; j<=NJ; j++){
 				old[i][j] = new[i][j];
 			}
-		}
-		
-		//Actualizo os ghosts da direita e da esquerda
-		for(i=1; i<offset-1; i++){
-			old[i][0] = old[i][NJ];
-			old[i][NJ+1] = old[i][1];
-		}
-		
-		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
-		//para o processo anterior e para o posterior, respetivamente
-		
-		MPI_Send(&old + offset, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD);
-		MPI_Send(&old + offset*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD);
-		
-		//Tenho que receber e gravar
-		
-		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		for(i = 0; i < nj; i++){
-			old[offset-1][i] = buf[i];
-		}
-		MPI_Recv(&buf, nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		for(i = 0; i < nj; i++){
-			old[0][i] = buf[i];
-		}
-		
-		
+		}	
 	}
 	
 	MPI_Reduce(&alive_local, &alive, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
