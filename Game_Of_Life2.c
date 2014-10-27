@@ -102,6 +102,9 @@ int main(int argc, char *argv[]) {
 		MPI_Isend(&old[offset-2], nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
 		}
 		
+		MPI_Wait(&request, MPI_STATUS_IGNORE);
+		MPI_Wait(&request2, MPI_STATUS_IGNORE);
+		
 		printf("pid: %d Tentou enviar\n", pid);
 		
 		///Tenho que receber e gravar
@@ -122,9 +125,6 @@ int main(int argc, char *argv[]) {
 		for(i = 0; i < nj; i++){
 			old[0][i] = buf[i];
 		}
-		
-		MPI_Wait(&request, MPI_STATUS_IGNORE);
-		MPI_Wait(&request2, MPI_STATUS_IGNORE);
 		
 		
 		printf("pid: %d Recebeu tudo\n", pid);
