@@ -122,13 +122,13 @@ int main(int argc, char *argv[]) {
 		
 		MPI_Start(&recieve2);
 		for(i = 0; i < nj; i++){
-			old[0][i] = buf[i];
+			old[0][i] = buf_recv[i];
 		}
 		//Garanto que os sends e recieves estao feitos
-		MPI_Wait (&send1, status);
-		MPI_Wait (&send2, status);
-		MPI_Wait (&recieve1, status);
-		MPI_Wait (&recieve2, status);
+		MPI_Wait (&send1, &status);
+		MPI_Wait (&send2, &status);
+		MPI_Wait (&recieve1, &status);
+		MPI_Wait (&recieve2, &status);
 		
 		//Iterar Ciclos
 		for(i=1; i<offset-1; i++){
