@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 		
 		printf("pid: %d Tentou enviar\n", pid);
 		
-		//Tenho que receber e gravar
+		///Tenho que receber e gravar
 		if(pid == (n_proc-1)){
 		MPI_Recv(&buf, nj, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}else{
