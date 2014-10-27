@@ -97,9 +97,9 @@ int main(int argc, char *argv[]) {
 		printf("BLE\n");
 		
 		if(pid==(n_proc-1)){
-		MPI_Isend(&old + (offset-1)*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &request2);
+		MPI_Isend(&old + (offset-2)*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &request2);
 		}else{
-		MPI_Isend(&old + (offset-1)*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
+		MPI_Isend(&old + (offset-2)*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
 		}
 		
 		printf("pid: %d Tentou enviar\n", pid);
