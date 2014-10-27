@@ -40,16 +40,18 @@ int main(int argc, char *argv[]) {
 	int offset = NI / n_proc + 2;
 
 	if (pid+1 == n_proc){
-				offset+= NI % n_proc;
-			}
+		offset+= NI % n_proc;
+	}
 		
 	printf("pid: %d Vou alocar\n", pid);
 	
 	old = malloc(offset*sizeof(int*));
-	new = malloc(offset*sizeof(int*));
-	
 	for(i=0; i<offset; i++){
 	old[i] = malloc(nj*sizeof(int));
+	}
+	
+	new = malloc(offset*sizeof(int*));
+	for(i=0; i<offset; i++){
 	new[i] = malloc(nj*sizeof(int));
 	}
 	
@@ -80,7 +82,7 @@ int main(int argc, char *argv[]) {
 	for(n = 0; n < NSTEPS; n++){
 		
 		//Actualizo os ghosts da direita e da esquerda
-		for(i=1; i<offset-1; i++){
+		for(i=1; i<(offset-1); i++){
 			old[i][0] = old[i][NJ];
 			old[i][NJ+1] = old[i][1];
 		}
@@ -88,14 +90,14 @@ int main(int argc, char *argv[]) {
 		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
 		//para o processo anterior e para o posterior, respetivamente
 		if(pid==0){
-		MPI_Isend(&old + offset, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &request);
+		MPI_Isend(&old + nj, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &request);
 		}else{
-		MPI_Isend(&old + offset, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &request);
+		MPI_Isend(&old + nj, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &request);
 		}
 		if(pid==(n_proc-1)){
-		MPI_Isend(&old + offset*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &request2);
+		MPI_Isend(&old + (offset-1)*nj, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &request2);
 		}else{
-		MPI_Isend(&old + offset*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
+		MPI_Isend(&old + (offset-1)*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
 		}
 		
 		printf("pid: %d Tentou enviar\n", pid);
