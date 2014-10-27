@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
 	nj = NJ + 2;
 	
 	int pid, n_proc;
-	MPI_Status status;
 	// numero de procecos
 	MPI_Comm_size(MPI_COMM_WORLD, &n_proc);	
 	// id do processo
