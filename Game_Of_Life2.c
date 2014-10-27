@@ -42,7 +42,9 @@ int main(int argc, char *argv[]) {
 	if (pid+1 == n_proc){
 				offset+= NI % n_proc;
 			}
-			
+		
+	printf("pid: %d Vou alocar\n", pid);
+	
 	old = malloc(offset*sizeof(int*));
 	new = malloc(offset*sizeof(int*));
 	
