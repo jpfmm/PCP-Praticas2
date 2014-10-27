@@ -106,9 +106,9 @@ int main(int argc, char *argv[]) {
 		
 		//Tenho que receber e gravar
 		if(pid == (n_proc-1)){
-		MPI_Recv(&buf, nj, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE, &status);
+		MPI_Recv(&buf, nj, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}else{
-		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE, &status);
+		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		for(i = 0; i < nj; i++){
 			old[offset-1][i] = buf[i];
