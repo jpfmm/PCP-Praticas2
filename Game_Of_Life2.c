@@ -29,13 +29,11 @@ int main(int argc, char *argv[]) {
 	nj = NJ + 2;
 	
 	int pid, n_proc;
-	MPI_Status status;
+	MPI_Status status1, status2;
 	// numero de procecos
 	MPI_Comm_size(MPI_COMM_WORLD, &n_proc);	
 	// id do processo
 	MPI_Comm_rank(MPI_COMM_WORLD, &pid);
-	
-	MPI_Request request, request2;
 	
 	int offset = NI / n_proc + 2;
 
@@ -86,7 +84,7 @@ int main(int argc, char *argv[]) {
 			old[i][0] = old[i][NJ];
 			old[i][NJ+1] = old[i][1];
 		}
-		
+		MPI_Request request, request2;
 		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
 		//para o processo anterior e para o posterior, respetivamente
 		if(pid==0){
