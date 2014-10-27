@@ -109,11 +109,11 @@ int main(int argc, char *argv[]) {
 		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
 		//para o processo anterior e para o posterior, respetivamente
 		for(i=0; i<nj; i++){
-			buf_send[i] = old[0][i];
+			buf_send[i] = old[1][i];
 		}
 		MPI_Start(&send1);
 		for(i=0; i<nj; i++){
-			buf_send[i] = old[ni-1][i];
+			buf_send[i] = old[offset-2][i];
 		}
 		MPI_Start(&send2);
 		
