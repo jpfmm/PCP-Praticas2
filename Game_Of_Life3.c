@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 	
 	MPI_Request send1, send2;
 	MPI_Request recieve1, recieve2;
-	MPI_Status status;
+	MPI_Status statusS1, statusS2, statusR1, statusR2;
 	
 	int offset = NI / n_proc + 2;
 
@@ -75,25 +75,25 @@ int main(int argc, char *argv[]) {
 	
 	//Inicializa as comunicações
 	if(pid == 0){
-		MPI_Send_init(&buf_send, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &send1);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &send1);
 	}else{
-		MPI_Send_init(&buf_send, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &send1);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &send1);
 	}
 	if(pid == (n_proc-1)){
-		MPI_Send_init(&buf_send, nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &send2);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &send2);
 	}else{
-		MPI_Send_init(&buf_send, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &send2);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &send2);
 	}
 	
 	if(pid == (n_proc-1)){
-		MPI_Recv_init(&buf_recv, nj, MPI_INT, 0, 2, MPI_COMM_WORLD, &recieve1);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, 0, 2, MPI_COMM_WORLD, &recieve1);
 	}else{
-		MPI_Recv_init(&buf_recv, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, &recieve1);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, &recieve1);
 	}
 	if(pid == 0){
-		MPI_Recv_init(&buf_recv, nj, MPI_INT, n_proc-1, 3, MPI_COMM_WORLD, &recieve2);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, n_proc-1, 3, MPI_COMM_WORLD, &recieve2);
 	}else{
-		MPI_Recv_init(&buf_recv, nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, &recieve2);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, &recieve2);
 	}
 	
 	
@@ -128,10 +128,10 @@ int main(int argc, char *argv[]) {
 			old[0][i] = buf_recv[i];
 		}
 		//Garanto que os sends e recieves estao feitos
-		MPI_Wait (&send1, &status);
-		MPI_Wait (&send2, &status);
-		MPI_Wait (&recieve1, &status);
-		MPI_Wait (&recieve2, &status);
+		MPI_Wait (&send1, &statusS1);
+		MPI_Wait (&send2, &statusS2);
+		MPI_Wait (&recieve1, &statusR1);
+		MPI_Wait (&recieve2, &statusR2);
 		
 		//Iterar Ciclos
 		for(i=1; i<offset-1; i++){
