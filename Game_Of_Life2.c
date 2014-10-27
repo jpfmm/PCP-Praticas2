@@ -88,9 +88,9 @@ int main(int argc, char *argv[]) {
 		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
 		//para o processo anterior e para o posterior, respetivamente
 		if(pid==0){
-		MPI_Isend(&old + nj, nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &request);
+		MPI_Isend(&old[1], nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &request);
 		}else{
-		MPI_Isend(&old + nj, nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &request);
+		MPI_Isend(&old[1], nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &request);
 		}
 		printf("BLE\n");
 		
@@ -99,26 +99,22 @@ int main(int argc, char *argv[]) {
 		}else{
 		MPI_Isend(&old[offset-2], nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
 		}
-		
-		MPI_Wait(&request, MPI_STATUS_IGNORE);
-		MPI_Wait(&request2, MPI_STATUS_IGNORE);
-		
 		printf("pid: %d Tentou enviar\n", pid);
 		
 		///Tenho que receber e gravar
 		if(pid == (n_proc-1)){
-		MPI_Recv(&buf, nj, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&buf[0], nj, MPI_INT, 0, 2, MPI_COMM_WORLD, &status1);
 		}else{
-		MPI_Recv(&buf, nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&buf[0], nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, &status1);
 		}
 		for(i = 0; i < nj; i++){
 			old[offset-1][i] = buf[i];
 		}
 		
 		if(pid == 0){
-		MPI_Recv(&buf, nj, MPI_INT, n_proc-1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&buf[0], nj, MPI_INT, n_proc-1, 3, MPI_COMM_WORLD, &status2);
 		}else{
-		MPI_Recv(&buf, nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&buf[0], nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, &status2);
 		}
 		for(i = 0; i < nj; i++){
 			old[0][i] = buf[i];
