@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 		for(i = 0; i < nj; i++){
 			old[0][i] = buf[i];
 		}
-		}
+		
 		
 		//Iterar Ciclos
 		for(i=1; i<offset-1; i++){
