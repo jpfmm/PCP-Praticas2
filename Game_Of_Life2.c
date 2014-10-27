@@ -123,6 +123,10 @@ int main(int argc, char *argv[]) {
 			old[0][i] = buf[i];
 		}
 		
+		MPI_Wait(&request, MPI_STATUS_IGNORE);
+		MPI_Wait(&request2, MPI_STATUS_IGNORE);
+		
+		
 		printf("pid: %d Recebeu tudo\n", pid);
 		//Iterar Ciclos
 		for(i=1; i<offset-1; i++){
