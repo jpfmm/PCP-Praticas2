@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
 	int i, j, n, im, ip, jm, jp, ni, nj, nsum, alive = 0, alive_local = 0;
 	int **new, **old, *buf;
 	float x;
+	double inicio, fim;
 	
 	MPI_Init(&argc, &argv);
 	
@@ -52,6 +53,7 @@ int main(int argc, char *argv[]) {
 	
 	buf = malloc(nj*sizeof(int));
  	
+	inicio = MPI_Wtime();
 	
 	/* seed */
 	// srand(time(0));
@@ -153,6 +155,10 @@ int main(int argc, char *argv[]) {
 	if(pid == 0){
 		printf("\nNumber of live cells = %d, for a %dx%d grid with %d iterations\n", alive, NI, NJ, NSTEPS);
 	}
+	
+	fim = MPI_Wtime();
+
+	printf("Tempo decorrido: %f\n", fim-inicio);
 	
 	free(old);
 	free(new);
