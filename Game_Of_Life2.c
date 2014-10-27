@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 	
 	printf("pid: %d Alocou\n", pid);
 	
-	buf = malloc(nj*sizeof(int));
+	buf = malloc((nj+3)*sizeof(int));
  	
 	inicio = MPI_Wtime();
 	
