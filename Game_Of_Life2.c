@@ -51,6 +51,8 @@ int main(int argc, char *argv[]) {
 	new[i] = malloc(nj*sizeof(int));
 	}
 	
+	printf("pid: %d Alocou\n", pid);
+	
 	buf = malloc(nj*sizeof(int));
  	
 	inicio = MPI_Wtime();
@@ -70,6 +72,7 @@ int main(int argc, char *argv[]) {
 	}
 	}
 
+	printf("pid: %d Gerou\n", pid);
 	
 	// Efectua os calculos respetivos
 	for(n = 0; n < NSTEPS; n++){
@@ -93,6 +96,8 @@ int main(int argc, char *argv[]) {
 		MPI_Isend(&old + offset*nj, nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &request2);
 		}
 		
+		printf("pid: %d Tentou enviar\n", pid);
+		
 		//Tenho que receber e gravar
 		if(pid == (n_proc-1)){
 		MPI_Recv(&buf, nj, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -111,7 +116,7 @@ int main(int argc, char *argv[]) {
 			old[0][i] = buf[i];
 		}
 		
-		
+		printf("pid: %d Recebeu tudo\n", pid);
 		//Iterar Ciclos
 		for(i=1; i<offset-1; i++){
 		for(j=1; j<=NJ; j++){
@@ -149,6 +154,7 @@ int main(int argc, char *argv[]) {
 		}	
 	}
 	
+	printf("Vou fazer reduce\n");
 	MPI_Reduce(&alive_local, &alive, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 	
 	
