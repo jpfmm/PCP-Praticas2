@@ -88,7 +88,7 @@ void main (int argc, char *argv[])
 	MPI_Status statSR[4], statRR[4], statSF[4], statRF[4];
 	MPI_Comm cartcomm;
 
-	int n_proc, rank, source, dest, nbrs[4], dims[2], periods[2]={1,1}, reorder=1, coords[2];
+	int n_proc, rank, source, dest, nbrs[4], dims[2], periods[2]={1,1}, reorder=1, coords[2], i;
 	 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
@@ -100,7 +100,7 @@ void main (int argc, char *argv[])
 	if((lado * lado) != n_proc){
 		printf("ERRO: Numero incorreto de processos\n");
 		MPI_Finalize();
-		exit 0;
+		exit;
 	}
 
 	//Cria a grelha cartesiana e descobre os vizinhos
@@ -337,7 +337,7 @@ int SetLand ( float *Rabbit, float *Fox, float model[2][3], int offsetNS, int of
  * Compute the next generation of foxes and rabbits.
  * 
  ***********************************************************************/
-int Evolve(float *Rabbit, float *Fox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
+int Evolve(float **Rabbit, float **Fox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
 {
     int err;
     int gi, gj;
