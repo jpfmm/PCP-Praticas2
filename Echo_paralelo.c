@@ -100,7 +100,7 @@ void main (int argc, char *argv[])
 	if((lado * lado) != n_proc){
 		printf("ERRO: Numero incorreto de processos\n");
 		MPI_Finalize();
-		return 0;
+		return;
 	}
 
 	//Cria a grelha cartesiana e descobre os vizinhos
@@ -279,7 +279,7 @@ void main (int argc, char *argv[])
 			Rabbit[0][i] = buf_sendNS[i];
 		}
 		
-        err = Evolve(Rabbit,Fox,model,offsetNS,offsetWE,coords); 
+        err = Evolve(Rabbit,Fox,model,TRabbit,TFox,offsetNS,offsetWE,coords); 
         if( !(k%PERIOD) ) {
             err = GetPopulation(Rabbit,&localRabb,offsetNS,offsetWE); 
             err = GetPopulation(Fox,&localFox,offsetNS,offsetWE); 
@@ -337,7 +337,7 @@ int SetLand ( float **Rabbit, float **Fox, float model[2][3], int offsetNS, int 
  * Compute the next generation of foxes and rabbits.
  * 
  ***********************************************************************/
-int Evolve(float **Rabbit, float **Fox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
+int Evolve(float **Rabbit, float **Fox, float **TRabbit, float **TFox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
 {
     int err;
     int gi, gj;
