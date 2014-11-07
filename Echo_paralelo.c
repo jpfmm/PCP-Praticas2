@@ -100,7 +100,7 @@ void main (int argc, char *argv[])
 	if((lado * lado) != n_proc){
 		printf("ERRO: Numero incorreto de processos\n");
 		MPI_Finalize();
-		exit;
+		return 0;
 	}
 
 	//Cria a grelha cartesiana e descobre os vizinhos
@@ -299,7 +299,7 @@ void main (int argc, char *argv[])
  * Initialise the populations of foxes and rabbits.
  * 
  ***********************************************************************/
-int SetLand ( float *Rabbit, float *Fox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
+int SetLand ( float **Rabbit, float **Fox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
 {
     int err;
     int gi, gj;
@@ -393,7 +393,7 @@ int Evolve(float **Rabbit, float **Fox, float model[2][3], int offsetNS, int off
  * Compute the number of individuals in one animal population.
  * 
  ***********************************************************************/
-int GetPopulation(float *Animal, float *tcount, int offsetNS, int offsetWE)
+int GetPopulation(float **Animal, float *tcount, int offsetNS, int offsetWE)
 {
     int   err;
     int   i, j;
