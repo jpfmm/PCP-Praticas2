@@ -122,8 +122,8 @@ void main (int argc, char *argv[])
 	}
 	
 	//Cria bufs para comunicação
-	int buf_sendNS[offsetNS-2], buf_recvNS[offsetNS-2];
-	int buf_sendWE[offsetWE-2], buf_recvWE[offsetWE-2];
+	int buf_sendNS[offsetNS], buf_recvNS[offsetNS];
+	int buf_sendWE[offsetWE], buf_recvWE[offsetWE];
 
 	//Cria as grelhas
 	float Rabbit[offsetNS][offsetWE];
