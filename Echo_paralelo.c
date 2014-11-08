@@ -192,6 +192,7 @@ void main (int argc, char *argv[])
 
     /* Initialise the problem. (In each processor)*/
     err = SetLand(Rabbit,Fox,model,offsetNS,offsetWE,coords);
+	printf("Grelha criada\n");
  
     /* Iterate. */
     for( k=1; k<=NITER; k++) {
@@ -278,14 +279,18 @@ void main (int argc, char *argv[])
 		for(i=1; i <= offsetNS-2; i++){
 			Rabbit[0][i] = buf_sendNS[i];
 		}
+		printf("Tudo enviado\n");
 		
         err = Evolve(Rabbit,Fox,model,TRabbit,TFox,offsetNS,offsetWE,coords); 
+		printf("População evoluiu\n");
         if( !(k%PERIOD) ) {
             err = GetPopulation(Rabbit,&localRabb,offsetNS,offsetWE); 
             err = GetPopulation(Fox,&localFox,offsetNS,offsetWE); 
-            
+            printf("População calculada\n");
+			
 			MPI_Reduce(&localRabb, &totRabb, 1, MPI_FLOAT, MPI_SUM, 0, cartcomm);
 			MPI_Reduce(&localFox, &totFox, 1, MPI_FLOAT, MPI_SUM, 0, cartcomm);
+			printf("Reduces feitos\n");
 			
 			if(rank==0){
 				printf("Year %d: %.0f rabbits and %.0f foxes\n", k, totRabb, totFox);
