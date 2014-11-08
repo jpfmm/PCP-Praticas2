@@ -140,41 +140,41 @@ void main (int argc, char *argv[])
 	
 	//Enviar
 	//Cima e baixo
-	MPI_Send_init(&buf_sendWE[0], offsetWE-2, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqSF[UP]);
-	MPI_Send_init(&buf_sendWE[0], offsetWE-2, MPI_FLOAT, nbrs[DOWN], 1, cartcomm, &reqSF[DOWN]);
+	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqSF[UP]);
+	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 1, cartcomm, &reqSF[DOWN]);
 	
 	//Esquerda e direita
-	MPI_Send_init(&buf_sendNS[0], offsetNS-2, MPI_FLOAT, nbrs[LEFT], 2, cartcomm, &reqSF[LEFT]);
-	MPI_Send_init(&buf_sendNS[0], offsetNS-2, MPI_FLOAT, nbrs[RIGHT], 3, cartcomm, &reqSF[RIGHT]);
+	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 2, cartcomm, &reqSF[LEFT]);
+	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 3, cartcomm, &reqSF[RIGHT]);
 	
 	//Receber
 	//Cima e Baixo
-	MPI_Recv_init(&buf_recvWE[0], offsetWE-2, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqRF[DOWN]);
-	MPI_Recv_init(&buf_recvWE[0], offsetWE-2, MPI_FLOAT, nbrs[UP], 1, cartcomm, &reqRF[UP]);
+	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqRF[DOWN]);
+	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 1, cartcomm, &reqRF[UP]);
 	
 	//Esquerda e direita
-	MPI_Recv_init(&buf_recvNS[0], offsetNS-2, MPI_FLOAT, nbrs[RIGHT], 2, cartcomm, &reqRF[RIGHT]);
-	MPI_Recv_init(&buf_recvNS[0], offsetNS-2, MPI_FLOAT, nbrs[LEFT], 3, cartcomm, &reqRF[LEFT]);
+	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 2, cartcomm, &reqRF[RIGHT]);
+	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 3, cartcomm, &reqRF[LEFT]);
 		
 	//Coelhos
 	
 	//Enviar
 	//Cima e baixo
-	MPI_Send_init(&buf_sendWE[0], offsetWE-2, MPI_FLOAT, nbrs[UP], 4, cartcomm, &reqSR[UP]);
-	MPI_Send_init(&buf_sendWE[0], offsetWE-2, MPI_FLOAT, nbrs[DOWN], 5, cartcomm, &reqSR[DOWN]);
+	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 4, cartcomm, &reqSR[UP]);
+	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 5, cartcomm, &reqSR[DOWN]);
 	
 	//Esquerda e direita
-	MPI_Send_init(&buf_sendNS[0], offsetNS-2, MPI_FLOAT, nbrs[LEFT], 6, cartcomm, &reqSR[LEFT]);
-	MPI_Send_init(&buf_sendNS[0], offsetNS-2, MPI_FLOAT, nbrs[RIGHT], 7, cartcomm, &reqSR[RIGHT]);
+	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 6, cartcomm, &reqSR[LEFT]);
+	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 7, cartcomm, &reqSR[RIGHT]);
 	
 	//Receber
 	//Cima e Baixo
-	MPI_Recv_init(&buf_recvWE[0], offsetWE-2, MPI_FLOAT, nbrs[DOWN], 4, cartcomm, &reqRR[DOWN]);
-	MPI_Recv_init(&buf_recvWE[0], offsetWE-2, MPI_FLOAT, nbrs[UP], 5, cartcomm, &reqRR[UP]);
+	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 4, cartcomm, &reqRR[DOWN]);
+	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 5, cartcomm, &reqRR[UP]);
 	
 	//Esquerda e direita
-	MPI_Recv_init(&buf_recvNS[0], offsetNS-2, MPI_FLOAT, nbrs[RIGHT], 6, cartcomm, &reqRR[RIGHT]);
-	MPI_Recv_init(&buf_recvNS[0], offsetNS-2, MPI_FLOAT, nbrs[LEFT], 7, cartcomm, &reqRR[LEFT]);
+	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 6, cartcomm, &reqRR[RIGHT]);
+	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 7, cartcomm, &reqRR[LEFT]);
 	
 
 	
@@ -213,7 +213,7 @@ void main (int argc, char *argv[])
 			buf_sendNS[i] = Fox[i][1];
 		}
 		MPI_Start(&reqSF[LEFT]);
-		for(i=1; i <= offsetWE-2; i++){
+		for(i=1; i <= offsetNS-2; i++){
 			buf_sendNS[i] = Fox[i][offsetWE-2];
 		}
 		MPI_Start(&reqSF[RIGHT]);
@@ -254,7 +254,7 @@ void main (int argc, char *argv[])
 			buf_sendNS[i] = Rabbit[i][1];
 		}
 		MPI_Start(&reqSR[LEFT]);
-		for(i=1; i <= offsetWE-2; i++){
+		for(i=1; i <= offsetNS-2; i++){
 			buf_sendNS[i] = Rabbit[i][offsetWE-2];
 		}
 		MPI_Start(&reqSR[RIGHT]);
