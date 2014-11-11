@@ -17,8 +17,10 @@
  ************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
+#include "echo_single.h"
 /***********************************************************************
  * 
  * This file contains C code for modelling a simple predator-prey model.
@@ -67,10 +69,10 @@
 /* A few useful macros. */
 #include "macro.h"
 
- #define UP    0
- #define DOWN  1
- #define LEFT  2
- #define RIGHT 3
+#define UP    0
+#define DOWN  1
+#define LEFT  2
+#define RIGHT 3
 
 /* -- Arrays -- */
 /* The arrays storing the number of animals in each stretch of land
@@ -82,235 +84,23 @@
  * arrays.
  */
 
-void main (int argc, char *argv[])
-{
-	MPI_Request reqSR[4], reqRR[4], reqSF[4], reqRF[4];
-	MPI_Status statSR[4], statRR[4], statSF[4], statRF[4];
-	MPI_Comm cartcomm;
+/*** Tamanhos dos offSets em variaveis globais  ***/
+int offsetNS, offsetWE, coords[2], rank, k;
 
-	int n_proc, rank, source, dest, nbrs[4], dims[2], periods[2]={1,1}, reorder=1, coords[2], i;
-	 
-	MPI_Init(&argc, &argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
 
-	int lado = sqrt(n_proc);
-	dims[0] = lado; 
-	dims[1] = lado;
 
-	if((lado * lado) != n_proc){
-		printf("ERRO: Numero incorreto de processos\n");
-		MPI_Finalize();
-		return;
-	}
-
-	//Cria a grelha cartesiana e descobre os vizinhos
-	MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, reorder, &cartcomm);
-	MPI_Comm_rank(cartcomm, &rank);
-	MPI_Cart_coords(cartcomm, rank, 2, coords);
-	MPI_Cart_shift(cartcomm, 0, 1, &nbrs[UP], &nbrs[DOWN]);
-	MPI_Cart_shift(cartcomm, 1, 1, &nbrs[LEFT], &nbrs[RIGHT]);
-
-	//Determina o offset de cada processador
-	int offsetNS = NS_Size / lado + 2;
-	int offsetWE = WE_Size / lado + 2;
-	
-	if(coords[0] == (lado-1)){
-		offsetNS += NS_Size % lado;
-	}
-	if(coords[1] == (lado-1)){
-		offsetWE += WE_Size % lado;
-	}
-	
-	//Cria bufs para comunicação
-	int buf_sendNS[offsetNS], buf_recvNS[offsetNS];
-	int buf_sendWE[offsetWE], buf_recvWE[offsetWE];
-
-	//Cria as grelhas
-	float Rabbit[offsetNS][offsetWE];
-	float Fox[offsetNS][offsetWE];
-
-	/* The next two arrays are used in function Evolve() to compute
-	 * the next generation of rabbits and foxes.
-	 */
-	float TRabbit[offsetNS][offsetWE];
-	float TFox[offsetNS][offsetWE];
-
-	//Inicialização das comunicações
-	//Raposas
-	
-	//Enviar
-	//Cima e baixo
-	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqSF[UP]);
-	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 1, cartcomm, &reqSF[DOWN]);
-	
-	//Esquerda e direita
-	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 2, cartcomm, &reqSF[LEFT]);
-	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 3, cartcomm, &reqSF[RIGHT]);
-	
-	//Receber
-	//Cima e Baixo
-	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqRF[DOWN]);
-	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 1, cartcomm, &reqRF[UP]);
-	
-	//Esquerda e direita
-	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 2, cartcomm, &reqRF[RIGHT]);
-	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 3, cartcomm, &reqRF[LEFT]);
-		
-	//Coelhos
-	
-	//Enviar
-	//Cima e baixo
-	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 4, cartcomm, &reqSR[UP]);
-	MPI_Send_init(&buf_sendWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 5, cartcomm, &reqSR[DOWN]);
-	
-	//Esquerda e direita
-	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 6, cartcomm, &reqSR[LEFT]);
-	MPI_Send_init(&buf_sendNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 7, cartcomm, &reqSR[RIGHT]);
-	
-	//Receber
-	//Cima e Baixo
-	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 4, cartcomm, &reqRR[DOWN]);
-	MPI_Recv_init(&buf_recvWE[0], offsetWE, MPI_FLOAT, nbrs[UP], 5, cartcomm, &reqRR[UP]);
-	
-	//Esquerda e direita
-	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 6, cartcomm, &reqRR[RIGHT]);
-	MPI_Recv_init(&buf_recvNS[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 7, cartcomm, &reqRR[LEFT]);
-	
-
-	
-    /* -- Local Arrays -- */
-    /* The array named model is used to pass the model parameters
-     * across procedures.
-     */
-    float model[2][3];
-
-    /* Loop indices, bounds and population counters */
-    int k;
-    float totFox, totRabb, localFox, localRabb;
-
-    int err;
-
-    /* Initialise the problem. (In each processor)*/
-    err = SetLand(Rabbit,Fox,model,offsetNS,offsetWE,coords);
-	printf("Grelha criada\n");
- 
-    /* Iterate. */
-    for( k=1; k<=NITER; k++) {
-	
-		//Envia e recebe ghosts
-		//Raposas
-		//Envia
-		//Cima e baixo
-		for(i=1; i <= offsetWE-2; i++){
-			buf_sendWE[i] = Fox[1][i];
-		}
-		MPI_Start(&reqSF[UP]);
-		for(i=1; i <= offsetWE-2; i++){
-			buf_sendWE[i] = Fox[offsetNS-2][i];
-		}
-		MPI_Start(&reqSF[DOWN]);
-		//Esquerda e direita
-		for(i=1; i <= offsetNS-2; i++){
-			buf_sendNS[i] = Fox[i][1];
-		}
-		MPI_Start(&reqSF[LEFT]);
-		for(i=1; i <= offsetNS-2; i++){
-			buf_sendNS[i] = Fox[i][offsetWE-2];
-		}
-		MPI_Start(&reqSF[RIGHT]);
-		
-		//Recebe
-		//Cima e baixo
-		MPI_Start(&reqRF[DOWN]);
-		for(i=1; i <= offsetWE-2; i++){
-			Fox[offsetNS-2][i] = buf_sendWE[i];
-		}
-		MPI_Start(&reqRF[UP]);
-		for(i=1; i <= offsetWE-2; i++){
-			Fox[0][i] = buf_sendWE[i];
-		}
-		//Esquerda e direita
-		MPI_Start(&reqRF[RIGHT]);
-		for(i=1; i <= offsetNS-2; i++){
-			Fox[offsetWE-2][i] = buf_sendNS[i];
-		}
-		MPI_Start(&reqRF[LEFT]);
-		for(i=1; i <= offsetNS-2; i++){
-			Fox[0][i] = buf_sendNS[i];
-		}
-			
-		//Coelhos
-		//Envia
-		//Cima e baixo
-		for(i=1; i <= offsetWE-2; i++){
-			buf_sendWE[i] = Rabbit[1][i];
-		}
-		MPI_Start(&reqSR[UP]);
-		for(i=1; i <= offsetWE-2; i++){
-			buf_sendWE[i] = Rabbit[offsetNS-2][i];
-		}
-		MPI_Start(&reqSR[DOWN]);
-		//Esquerda e direita
-		for(i=1; i <= offsetNS-2; i++){
-			buf_sendNS[i] = Rabbit[i][1];
-		}
-		MPI_Start(&reqSR[LEFT]);
-		for(i=1; i <= offsetNS-2; i++){
-			buf_sendNS[i] = Rabbit[i][offsetWE-2];
-		}
-		MPI_Start(&reqSR[RIGHT]);
-		
-		//Recebe
-		//Cima e baixo
-		MPI_Start(&reqRR[DOWN]);
-		for(i=1; i <= offsetWE-2; i++){
-			Rabbit[offsetNS-2][i] = buf_sendWE[i];
-		}
-		MPI_Start(&reqRR[UP]);
-		for(i=1; i <= offsetWE-2; i++){
-			Rabbit[0][i] = buf_sendWE[i];
-		}
-		//Esquerda e direita
-		MPI_Start(&reqRR[RIGHT]);
-		for(i=1; i <= offsetNS-2; i++){
-			Rabbit[offsetWE-2][i] = buf_sendNS[i];
-		}
-		MPI_Start(&reqRR[LEFT]);
-		for(i=1; i <= offsetNS-2; i++){
-			Rabbit[0][i] = buf_sendNS[i];
-		}
-		printf("Tudo enviado\n");
-		
-        err = Evolve(Rabbit,Fox,model,TRabbit,TFox,offsetNS,offsetWE,coords); 
-		printf("População evoluiu\n");
-        if( !(k%PERIOD) ) {
-            err = GetPopulation(Rabbit,&localRabb,offsetNS,offsetWE); 
-            err = GetPopulation(Fox,&localFox,offsetNS,offsetWE); 
-            printf("População calculada\n");
-			
-			MPI_Reduce(&localRabb, &totRabb, 1, MPI_FLOAT, MPI_SUM, 0, cartcomm);
-			MPI_Reduce(&localFox, &totFox, 1, MPI_FLOAT, MPI_SUM, 0, cartcomm);
-			printf("Reduces feitos\n");
-			
-			if(rank==0){
-				printf("Year %d: %.0f rabbits and %.0f foxes\n", k, totRabb, totFox);
-			}
-		}
-    }
-
-}
 /***********************************************************************
- * 
+ *
  * Initialise the populations of foxes and rabbits.
- * 
+ *
  ***********************************************************************/
-int SetLand ( float **Rabbit, float **Fox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
+int SetLand ( float Rabbit[offsetNS+2][offsetWE+2], float Fox[offsetNS+2][offsetWE+2], float model[2][3], int landNS, int landWE)
 {
     int err;
-    int gi, gj;
-
+    int gi, gj, i, j;
+    
     err = 0;
-
+    
     /* Set the parameters of the predator-prey model. */
     model[RABBIT][SAME] = -0.2;
     model[RABBIT][OTHER] = 0.6;
@@ -318,31 +108,39 @@ int SetLand ( float **Rabbit, float **Fox, float model[2][3], int offsetNS, int 
     model[FOX][OTHER] = 0.6;
     model[FOX][SAME] = -1.8;
     model[FOX][MIGRANT] = 0.02;
-
+    
     /* Fill the arrays for foxes and rabbits. */
-    for( gj=1; gj<=offsetWE-2; gj++) {
-        for( gi=1;  gi<=offsetNS-2; gi++) {
-            gi += coords[0]*offsetNS-2;
-			gj += coords[1]*offsetWE-2;
-			Rabbit[gi][gj] =
-                128.0*(gi-1)*(NS_Size-gi)*(gj-1)*(WE_Size-gj) /
-                (float)(NS_Size*NS_Size*WE_Size*WE_Size);
-            Fox[gi][gj] =
-                8.0*(gi/(float)(NS_Size)-0.5)*(gi/(float)(NS_Size)-0.5)+ 
-                8.0*(gj/(float)(WE_Size)-0.5)*(gj/(float)(WE_Size)-0.5);
+    gj=landWE*coords[1]+1;
+    for( j=1; j<=offsetWE; j++) {
+        gi=landNS*coords[0]+1;
+        for( i=1;  i<=offsetNS; i++) {
+            Rabbit[i][j] =
+            128.0*(gi-1)*(NS_Size-gi)*(gj-1)*(WE_Size-gj) /
+            (float)(NS_Size*NS_Size*WE_Size*WE_Size);
+            Fox[i][j] =
+            8.0*(gi/(float)(NS_Size)-0.5)*(gi/(float)(NS_Size)-0.5)+
+            8.0*(gj/(float)(WE_Size)-0.5)*(gj/(float)(WE_Size)-0.5);
+            gi++;
         }
+        gj++;
     }
-
-/* Return the error code. */
+    
+    /* Return the error code. */
     return(err);
-
+    
 }
+
 /***********************************************************************
  * 
  * Compute the next generation of foxes and rabbits.
  * 
  ***********************************************************************/
-int Evolve(float **Rabbit, float **Fox, float **TRabbit, float **TFox, float model[2][3], int offsetNS, int offsetWE, int coords[2])
+int Evolve(
+float        Rabbit[offsetNS+2][offsetWE+2],
+float        Fox[offsetNS+2][offsetWE+2],
+float        TRabbit[offsetNS+2][offsetWE+2],
+float        TFox[offsetNS+2][offsetWE+2],
+float        model[2][3])
 {
     int err;
     int gi, gj;
@@ -357,21 +155,17 @@ int Evolve(float **Rabbit, float **Fox, float **TRabbit, float **TFox, float mod
     AlF = model[FOX][OTHER];
     MuF  = model[FOX][MIGRANT];
 
-    /* Fill-in the border of the local Rabbit array. */
-    //err = FillBorder(Rabbit); 
+    
+    /*  Não é preciso fill board porque este já é feito na comunicação feita antes de entrar nesta função
 
-    /* Fill-in the border of the local Fox array. */
-    //err = FillBorder(Fox); 
-
-    /* Update the local population data. */
-    for( gj=1; gj<=offsetWE-2; gj++){
-        for( gi=1; gi<=offsetNS-2; gi++){
-            gi += coords[0]*offsetNS-2;
-			gj += coords[1]*offsetWE-2;
-			TRabbit[gi][gj] = (1.0+AlR-4.0*MuR)*Rabbit[gi][gj] +
+    // Update the local population data. */
+    for( gj=1; gj<=offsetWE; gj++){
+        for( gi=1; gi<=offsetNS; gi++){
+            TRabbit[gi][gj] = (1.0+AlR-4.0*MuR)*Rabbit[gi][gj] +
                 BtR*Fox[gi][gj] +
                 MuR*(Rabbit[gi][gj-1]+Rabbit[gi][gj+1]+
                 Rabbit[gi-1][gj]+Rabbit[gi+1][gj]);
+            
             TFox[gi][gj] = AlF*Rabbit[gi][gj] +
                 (1.0+BtF-4.0*MuF)*Fox[gi][gj] +
                 MuF*(Fox[gi][gj-1]+Fox[gi][gj+1]+
@@ -380,11 +174,9 @@ int Evolve(float **Rabbit, float **Fox, float **TRabbit, float **TFox, float mod
     }
 
     /* Ensure the numbers in Rabbit and Fox are non-negative. */
-    for( gj=1; gj<=offsetWE-2; gj++){
-        for( gi=1; gi<=offsetNS-2; gi++){
-            gi += coords[0]*offsetNS-2;
-			gj += coords[1]*offsetWE-2;
-			Rabbit[gi][gj] = MAX( 0.0, TRabbit[gi][gj]);
+    for( gj=1; gj<=offsetWE; gj++){
+        for( gi=1; gi<=offsetNS; gi++){
+            Rabbit[gi][gj] = MAX( 0.0, TRabbit[gi][gj]);
             Fox[gi][gj] = MAX( 0.0, TFox[gi][gj]);
         }
     }
@@ -392,13 +184,14 @@ int Evolve(float **Rabbit, float **Fox, float **TRabbit, float **TFox, float mod
     /* Return the error code. */
     return(err);
 }
-
 /***********************************************************************
  * 
  * Compute the number of individuals in one animal population.
  * 
  ***********************************************************************/
-int GetPopulation(float **Animal, float *tcount, int offsetNS, int offsetWE)
+int GetPopulation(
+float    Animal[offsetNS+2][offsetWE+2],
+float    *tcount)
 {
     int   err;
     int   i, j;
@@ -408,9 +201,10 @@ int GetPopulation(float **Animal, float *tcount, int offsetNS, int offsetWE)
     
     /* Sum population. */
     p = 0.0;
-    for( j=1; j<=offsetWE-2; j++)
-      for( i=1; i<=offsetNS-2; i++)
+    for( j=1; j<=offsetWE; j++)
+        for( i=1; i<=offsetNS; i++){
             p = p + Animal[i][j];
+        }
 
     *tcount = p;
 
@@ -418,6 +212,252 @@ int GetPopulation(float **Animal, float *tcount, int offsetNS, int offsetWE)
     return(err);
 }
 
+
+int main (int argc, char *argv[])
+{
+    MPI_Request reqSR[4], reqRR[4], reqSF[4], reqRF[4];
+    MPI_Status statRR[4], statRF[4], statSR[4], statSF[4];
+    MPI_Comm cartcomm;
+    
+    
+    int n_proc, nbrs[4], dims[2], periods[2]={1,1}, reorder=1;
+    int landNS, landWE, err,i;
+    float sumFox, sumRabb, nbrab, nbfox, model[2][3];
+    double time;
+    
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
+    
+    if(rank==0){
+        time= MPI_Wtime();
+        printf("N_proc:%d",n_proc);
+    }
+    
+    
+    /****************************************************
+     **********    CASO DE 1 PROCESSO  ******************
+     ***************************************************/
+    if (n_proc==1) {
+        echoSingle();
+    }else{
+        
+        /****************************************************
+         **********+++    MULTI PROCESSOS  ******************
+         ***************************************************/
+    
+        int lado = sqrt(n_proc);
+        dims[0] = lado;
+        dims[1] = lado;
+        
+        if((lado * lado) != n_proc){
+            if(rank==0)
+                printf("ERRO: Numero incorreto de processos\n");
+            MPI_Finalize();
+            exit(0);
+        }
+        
+        MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, reorder, &cartcomm);
+        MPI_Comm_rank(cartcomm, &rank);
+        MPI_Cart_coords(cartcomm, rank, 2, coords);
+        MPI_Cart_shift(cartcomm, 0, 1, &nbrs[UP], &nbrs[DOWN]);
+        MPI_Cart_shift(cartcomm, 1, 1, &nbrs[LEFT], &nbrs[RIGHT]);
+        
+        
+        //Actualizar offsets de cada processo
+        landNS = offsetNS = NS_Size / lado;
+        landWE = offsetWE = WE_Size / lado;
+        
+        if(coords[0] == (lado-1)){
+            offsetNS += NS_Size % lado;
+        }
+        if(coords[1] == (lado-1)){
+            offsetWE += WE_Size % lado;
+        }
+        
+        //Buffers para envio e receção de dados
+        float buf_sendFoxN[offsetWE],buf_sendFoxS[offsetWE],buf_sendFoxW[offsetNS],buf_sendFoxE[offsetNS];
+        float buf_recvFoxN[offsetWE],buf_recvFoxS[offsetWE],buf_recvFoxW[offsetNS],buf_recvFoxE[offsetNS];
+        float buf_sendRabbitN[offsetWE],buf_sendRabbitS[offsetWE],buf_sendRabbitW[offsetNS],buf_sendRabbitE[offsetNS];
+        float buf_recvRabbitN[offsetWE],buf_recvRabbitS[offsetWE],buf_recvRabbitW[offsetNS],buf_recvRabbitE[offsetNS];
+        
+        float Rabbit[offsetNS+2][offsetWE+2];
+        float Fox[offsetNS+2][offsetWE+2];
+        
+        /* The next two arrays are used in function Evolve() to compute
+         * the next generation of rabbits and foxes.
+         */
+        float TRabbit[offsetNS+2][offsetWE+2];
+        float TFox[offsetNS+2][offsetWE+2];
+        
+        //Inicialização das comunicações
+        
+        //*********  Raposas   **************
+        //Enviar
+        //Cima e baixo
+        MPI_Send_init(&buf_sendFoxN[0], offsetWE, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqSF[UP]);
+        MPI_Send_init(&buf_sendFoxS[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqSF[DOWN]);
+        
+        //Esquerda e direita
+        MPI_Send_init(&buf_sendFoxW[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 0, cartcomm, &reqSF[LEFT]);
+        MPI_Send_init(&buf_sendFoxE[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 0, cartcomm, &reqSF[RIGHT]);
+        
+        //Receber
+        //Cima e Baixo
+        MPI_Recv_init(&buf_recvFoxS[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqRF[DOWN]);
+        MPI_Recv_init(&buf_recvFoxN[0], offsetWE, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqRF[UP]);
+        
+        //Esquerda e direita
+        MPI_Recv_init(&buf_recvFoxE[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 0, cartcomm, &reqRF[RIGHT]);
+        MPI_Recv_init(&buf_recvFoxW[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 0, cartcomm, &reqRF[LEFT]);
+        
+        //*********  Coelhos   ***************
+        //Enviar
+        //Cima e baixo
+        MPI_Send_init(&buf_sendRabbitN[0], offsetWE, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqSR[UP]);
+        MPI_Send_init(&buf_sendRabbitS[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqSR[DOWN]);
+        
+        //Esquerda e direita
+        MPI_Send_init(&buf_sendRabbitW[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 0, cartcomm, &reqSR[LEFT]);
+        MPI_Send_init(&buf_sendRabbitE[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 0, cartcomm, &reqSR[RIGHT]);
+        
+        //Receber
+        //Cima e Baixo
+        MPI_Recv_init(&buf_recvRabbitS[0], offsetWE, MPI_FLOAT, nbrs[DOWN], 0, cartcomm, &reqRR[DOWN]);
+        MPI_Recv_init(&buf_recvRabbitN[0], offsetWE, MPI_FLOAT, nbrs[UP], 0, cartcomm, &reqRR[UP]);
+        
+        //Esquerda e direita
+        MPI_Recv_init(&buf_recvRabbitE[0], offsetNS, MPI_FLOAT, nbrs[RIGHT], 0, cartcomm, &reqRR[RIGHT]);
+        MPI_Recv_init(&buf_recvRabbitW[0], offsetNS, MPI_FLOAT, nbrs[LEFT], 0, cartcomm, &reqRR [LEFT]);
+        
+        
+        /* Initialise the problem. */
+        err = SetLand(Rabbit,Fox,model,landNS, landWE);
+        
+        // Iterate.
+        for( k=1; k<=NITER; k++) {
+            
+            /******************************************************
+             ****    Começa comunicação de actualização    ********
+             ******************************************************/
+            
+            
+            //**************  Envios ***************/
+            //Raposas
+            //Cima e baixo
+            for(i=1; i <= offsetWE; i++)
+                buf_sendFoxN[i-1] = Fox[1][i];
+            MPI_Start(&reqSF[UP]);
+            
+            for(i=1; i <= offsetWE; i++)
+                buf_sendFoxS[i-1] = Fox[offsetNS][i];
+            MPI_Start(&reqSF[DOWN]);
+            
+            //Esquerda e direita
+            for(i=1; i <= offsetNS; i++)
+                buf_sendFoxW[i-1] = Fox[i][1];
+            MPI_Start(&reqSF[LEFT]);
+            
+            for(i=1; i <= offsetNS; i++)
+                buf_sendFoxE[i-1] = Fox[i][offsetWE];
+            MPI_Start(&reqSF[RIGHT]);
+            
+            //Coelhos
+            //Cima e baixo
+            for(i=1; i <= offsetWE; i++)
+                buf_sendRabbitN[i-1] = Rabbit[1][i];
+            MPI_Start(&reqSR[UP]);
+            
+            for(i=1; i <= offsetWE; i++)
+                buf_sendRabbitS[i-1] = Rabbit[offsetNS][i];
+            MPI_Start(&reqSR[DOWN]);
+            
+            //Esquerda e direita
+            for(i=1; i <= offsetNS; i++)
+                buf_sendRabbitW[i-1] = Rabbit[i][1];
+            MPI_Start(&reqSR[LEFT]);
+            
+            for(i=1; i <= offsetNS; i++)
+                buf_sendRabbitE[i-1] = Rabbit[i][offsetWE];
+            MPI_Start(&reqSR[RIGHT]);
+            
+            
+            //**************  Recepção ***************/
+            //Raposas
+            //Cima e baixo
+            MPI_Start(&reqRF[DOWN]);
+            MPI_Start(&reqRF[UP]);
+            
+            //Esquerda e direita
+            MPI_Start(&reqRF[RIGHT]);
+            MPI_Start(&reqRF[LEFT]);
+            
+            //Coelhos
+            //Cima e baixo
+            MPI_Start(&reqRR[DOWN]);
+            MPI_Start(&reqRR[UP]);
+            
+            //Esquerda e direita
+            MPI_Start(&reqRR[RIGHT]);
+            MPI_Start(&reqRR[LEFT]);
+            
+            
+            //Esperar pelos Receives e aplicar alterações nos quadros
+            //Raposas
+            MPI_Waitall(4, reqRR , statRR);
+            for(i=1; i <= offsetWE; i++)
+                Fox[offsetNS+1][i] = buf_recvFoxS[i-1];
+            for(i=1; i <= offsetWE; i++)
+                Fox[0][i] = buf_recvFoxN[i-1];
+            for(i=1; i <= offsetNS; i++)
+                Fox[i][offsetWE+1] = buf_recvFoxE[i-1];
+            for(i=1; i <= offsetNS; i++)
+                Fox[i][0] = buf_recvFoxW[i-1];
+            
+            //Coelhos
+            MPI_Waitall(4, reqRF, statRF);
+            for(i=1; i <= offsetWE; i++)
+                Rabbit[offsetNS+1][i] = buf_recvRabbitS[i-1];
+            for(i=1; i <= offsetWE; i++)
+                Rabbit[0][i] = buf_recvRabbitN[i-1];
+            for(i=1; i <= offsetNS; i++)
+                Rabbit[i][offsetWE+1] = buf_recvRabbitE[i-1];
+            for(i=1; i <= offsetNS; i++)
+                Rabbit[i][0] = buf_recvRabbitW[i-1];
+            
+            
+            /******************************************************
+             ****    Termina comunicação de actualização    ********
+             ******************************************************/
+            
+            err = Evolve(Rabbit,Fox,TRabbit,TFox,model);
+            if( !(k%PERIOD) ) {
+                err = GetPopulation(Rabbit,&nbrab);
+                err = GetPopulation(Fox,&nbfox);
+                
+                MPI_Reduce(&nbrab, &sumRabb, 1, MPI_FLOAT, MPI_SUM, 0, cartcomm);
+                MPI_Reduce(&nbfox, &sumFox, 1, MPI_FLOAT, MPI_SUM, 0, cartcomm);
+                
+                //if(rank==0)
+                  //  printf("Year %d: %.0f rabbits and %.0f foxes\n", k, sumRabb, sumFox);
+            }
+            
+            
+            //Esperar que os Sends estejam concluidos para ter a certeza que que já podemos mexer nos buffers
+            //(Não creio de que 100% obrigatório)
+            MPI_Waitall(4, reqSR , statSR);
+            MPI_Waitall(4, reqSF , statSF);
+        }
+        if(rank==0)
+            printf("Year %d: %.0f rabbits and %.0f foxes\n", k, sumRabb, sumFox);
+
+    }
+    
+    if(rank==0)
+            printf("Time: %f\n",MPI_Wtime()-time);
+    
+    MPI_Finalize();
+    return 0;
+}
 
 
 
