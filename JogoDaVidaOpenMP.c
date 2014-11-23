@@ -16,12 +16,23 @@ serial version
 
 #define NSTEPS 500    /* number of time steps */
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_num_threads()0
+#define omp_get_thread_num()0
+#endif
+
 int main(int argc, char *argv[]) {
 
   int i, j, n, im, ip, jm, jp, ni, nj, nsum, isum;
   int **old, **new;  
   float x;
 
+  if (argc != 2) printf("Argumentos inválidos"); 
+  int thread_count = strtol(argv[1], NULL, 10);
+  omp_set_num_threads(thread_count);
+  
   /* allocate arrays */
 
   ni = NI + 2;  /* add 2 for left and right ghost cells */
