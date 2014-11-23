@@ -201,8 +201,10 @@ int main(int argc, char *argv[]) {
 	//Eliminar alocacoes
 	free(old);
 	free(new);
-	free(buf_send);
-	free(buf_recv);
+	free(buf_send1);
+	free(buf_send2);
+	free(buf_recv1);
+	free(buf_recv2);
 	
 	MPI_Finalize();
 	
