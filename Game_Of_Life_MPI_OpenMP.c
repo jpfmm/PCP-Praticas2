@@ -60,10 +60,8 @@ int main(int argc, char *argv[]) {
 	new[i] = malloc(nj*sizeof(int));
 	}
 	
-	buf_send1 = malloc(nj*sizeof(int));
-	buf_send2 = malloc(nj*sizeof(int));
- 	buf_recv1 = malloc(nj*sizeof(int));
- 	buf_recv2 = malloc(nj*sizeof(int));
+	buf_send = malloc(nj*sizeof(int));
+ 	buf_recv = malloc(nj*sizeof(int));
 	
 	inicio = MPI_Wtime();
 	
@@ -85,25 +83,25 @@ int main(int argc, char *argv[]) {
 	
 	//Inicializa as comunicações
 	if(pid == 0){
-		MPI_Send_init(&buf_send1[0], nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &send1);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, n_proc-1, 2, MPI_COMM_WORLD, &send1);
 	}else{
-		MPI_Send_init(&buf_send1[0], nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &send1);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, pid-1, 2, MPI_COMM_WORLD, &send1);
 	}
 	if(pid == (n_proc-1)){
-		MPI_Send_init(&buf_send2[0], nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &send2);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, 0, 3, MPI_COMM_WORLD, &send2);
 	}else{
-		MPI_Send_init(&buf_send2[0], nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &send2);
+		MPI_Send_init(&buf_send[0], nj, MPI_INT, pid+1, 3, MPI_COMM_WORLD, &send2);
 	}
 	
 	if(pid == (n_proc-1)){
-		MPI_Recv_init(&buf_recv1[0], nj, MPI_INT, 0, 2, MPI_COMM_WORLD, &recieve1);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, 0, 2, MPI_COMM_WORLD, &recieve1);
 	}else{
-		MPI_Recv_init(&buf_recv1[0], nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, &recieve1);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, pid+1, 2, MPI_COMM_WORLD, &recieve1);
 	}
 	if(pid == 0){
-		MPI_Recv_init(&buf_recv2[0], nj, MPI_INT, n_proc-1, 3, MPI_COMM_WORLD, &recieve2);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, n_proc-1, 3, MPI_COMM_WORLD, &recieve2);
 	}else{
-		MPI_Recv_init(&buf_recv2[0], nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, &recieve2);
+		MPI_Recv_init(&buf_recv[0], nj, MPI_INT, pid-1, 3, MPI_COMM_WORLD, &recieve2);
 	}
 	
 	
@@ -119,23 +117,23 @@ int main(int argc, char *argv[]) {
 		//Agora so tenho que actualizar a minha grelha e enviar a primeira e a ultima linha
 		//para o processo anterior e para o posterior, respetivamente
 		for(i=0; i<nj; i++){
-			buf_send1[i] = old[1][i];
+			buf_send[i] = old[1][i];
 		}
 		MPI_Start(&send1);
 		for(i=0; i<nj; i++){
-			buf_send2[i] = old[offset-2][i];
+			buf_send[i] = old[offset-2][i];
 		}
 		MPI_Start(&send2);
 		
 		//Tenho que receber e gravar
 		MPI_Start(&recieve1);
 		for(i = 0; i < nj; i++){
-			old[offset-1][i] = buf_recv1[i];
+			old[offset-1][i] = buf_recv[i];
 		}
 		
 		MPI_Start(&recieve2);
 		for(i = 0; i < nj; i++){
-			old[0][i] = buf_recv2[i];
+			old[0][i] = buf_recv[i];
 		}
 		// //Garanto que os sends e recieves estao feitos
 		// MPI_Wait (&send1, &statusS1);
