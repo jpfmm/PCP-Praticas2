@@ -4,7 +4,7 @@
 #define SIZE 512
 
 
-void createMatrices(float **a, float **b){
+void createMatrices(float a[SIZE][SIZE], float b[SIZE][SIZE]){
 	int i, j;
 	for(i = 0; i < SIZE; i++){
 		for(j = 0; j < SIZE; j++){
@@ -14,30 +14,20 @@ void createMatrices(float **a, float **b){
 	}
 }
 
-void multMatrices(float **a, float **b, float **res){
+void multMatrices(float a[SIZE][SIZE], float b[SIZE][SIZE], float res[SIZE][SIZE]){
 	int i,j,k;
 	for(j = 0; j < SIZE; j++){
 		for(i = 0; i < SIZE; i++){
 			for(k = 0; k < SIZE; k++){
-				res[i][j] += mat1[i][k] * mat2[k][j]; 
+				res[i][j] += a[i][k] * b[k][j]; 
 			}
 		}
 	}
 }
 
 int main(){
-float **a, **b, **res;
+float a[SIZE][SIZE], b[SIZE][SIZE], res[SIZE][SIZE];
 int i;
-
-a = malloc(SIZE*sizeof(float*));
-b = malloc(SIZE*sizeof(float*));
-res = malloc(SIZE*sizeof(float*));
-
-for(i = 0; i < SIZE; i++){
-	a[i] = malloc(SIZE*sizeof(float));
-	b[i] = malloc(SIZE*sizeof(float));
-	res[i] = malloc(SIZE*sizeof(float));
-}
 
 createMatrices(a,b);
 
